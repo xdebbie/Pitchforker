@@ -1,13 +1,15 @@
 from requests_html import HTMLSession
 import sys
 import concurrent.futures
-from models import Reviews
+from models import Pitchfork
 from peewee import IntegrityError
 
 
 sess = HTMLSession()
-RECURSION_DEPTH = 3
-MAX_WORKERS = 5
+# touching recursion_depth will lead to generating duplicates - leave it as "1"
+RECURSION_DEPTH = 1
+# max_workers defines how many workers will be running the script in parallel. The higher is the number, the most resources it will consume and the faster the script will run
+MAX_WORKERS = 70
 
 
 def scrape_urls(url):
@@ -23,25 +25,42 @@ def scrape_urls(url):
 
 
 def scrape_page(url, recur_depth=0):
-    data = {'uri': url}
+    data = {'url': url}
     resp = sess.get(url)
+
+    pubdate = resp.html.find('time')
+    if pubdate:
+        data['pubdate'] = pubdate[0].text
+
     score = resp.html.find('.score')
     if score:
         data['score'] = score[0].text
+
+    year = resp.html.find('.single-album-tombstone__meta-year')[0].text
+    data['year'] = year
+    if year:
+        data['year'] = year.strip('•')
+
+    label = resp.html.find('.labels-list__item')
+    if label:
+        data['label'] = label[0].text
+
     genre = resp.html.find('.genre-list__link')
     if genre:
         data['genre'] = genre[0].text
+
     title = resp.html.find('title')[0].text
     data['title'] = title
     if title:
         try:
             data['artist'] = title.split(":")[0]
-            data['album'] = title[title.index(":")+1:title.index("Album Review")].strip()
+            data['album'] = title[title.index(
+                ":")+1:title.index("Album Review")].strip()
         except ValueError:
             return
     yield(data)
     if recur_depth > 0:
-        links = filter(lambda x: "/reviews/albums"in x and "?" not in x,
+        links = filter(lambda x: "/reviews/albums/?page=" in x and "?" not in x,
                        resp.html.absolute_links)
         for link in links:
             for page in scrape_page(link, recur_depth=recur_depth - 1):
@@ -49,7 +68,7 @@ def scrape_page(url, recur_depth=0):
 
 
 def insert_review(data):
-    new_review = Reviews(artist=data['artist'], album=data['album'])
+    new_review = Pitchfork(artist=data['artist'], album=data['album'])
     try:
         new_review.title = data['title']
     except KeyError:
@@ -59,11 +78,23 @@ def insert_review(data):
     except KeyError:
         pass
     try:
+        new_review.year = data['year']
+    except KeyError:
+        pass
+    try:
+        new_review.label = data['label']
+    except KeyError:
+        pass
+    try:
         new_review.genre = data['genre']
     except KeyError:
         pass
     try:
-        new_review.uri = data['uri']
+        new_review.url = data['url']
+    except KeyError:
+        pass
+    try:
+        new_review.pubdate = data['pubdate']
     except KeyError:
         pass
     new_review.save()
@@ -79,14 +110,17 @@ def mine_page(url, recur_depth=RECURSION_DEPTH):
 
 
 if __name__ == "__main__":
-    default_link = 'https://pitchfork.com/best/high-scoring-albums/?page='
+    # there are 1,876 album pages currently on pitchfork. The default link will make the iteration from the ?page=1 to the ?page=x
+    default_link = 'https://pitchfork.com/reviews/albums/?page='
     try:
         if "pitchfork.com" in sys.argv[1]:
             link = sys.argv[1]
         elif all(map(lambda x: x.isdigit(), sys.argv[1])):
+            # the iteration, from 1 to x in range
             link = [default_link + str(i) for i in range(int(sys.argv[1]))]
     except IndexError:
-        link = [default_link + str(i) for i in range(1, 10)]
+        # if your computer cannot handle in a single run the range of 1 to 1,876, it is recommended to run the script 4 times: from 1 to 501, 501 to 1001, 1001 to 1501 and 1501 to 1,876 (or whatever the last page currently is)
+        link = [default_link + str(i) for i in range(1, 5)]
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as exc:
         scraper = {exc.submit(mine_page, url): url for url in scrape_urls(link)}
         for future in concurrent.futures.as_completed(scraper):
