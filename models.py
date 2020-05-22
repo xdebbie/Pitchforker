@@ -1,5 +1,6 @@
-from peewee import SqliteDatabase, TextField, DoubleField, Model
+from peewee import SqliteDatabase, TextField, DoubleField, DateField, Model
 
+# create the database file
 db = SqliteDatabase('albums.db')
 
 
@@ -8,9 +9,12 @@ class BaseModel(Model):
         database = db
 
 
-class Reviews(BaseModel):
-    uri = TextField()
+class Pitchfork(BaseModel):
+    url = TextField()
+    pubdate = DateField()
     score = DoubleField()
+    year = DateField()
+    label = TextField()
     genre = TextField()
     title = TextField()
     artist = TextField()
@@ -19,5 +23,5 @@ class Reviews(BaseModel):
 
 if __name__ == "__main__":
     db.connect()
-    db.create_tables([Reviews])
+    db.create_tables([Pitchfork])
     db.close()
