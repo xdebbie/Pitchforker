@@ -1,6 +1,8 @@
 # Forkkit - Pitchfork's album reviews scraper
 
-### Scraper in Python that will integrate my final project with a repository yet to come
+### Scraper in Python that will integrate my final project with a repository yet to come  
+
+![Database as of 25th May 2020 => 20,077 albums reviewed](https://i.imgur.com/BjPG6AW.png)  
 
 ---
 
