@@ -1,6 +1,7 @@
 from requests_html import HTMLSession
 import concurrent.futures
 import sys
+import sqlite3
 from peewee import IntegrityError
 from htmldate import find_date
 from models import Pitchfork
@@ -124,8 +125,32 @@ if __name__ == "__main__":
             link = [default_link + str(i) for i in range(int(sys.argv[1]))]
     except IndexError:
         # if your computer cannot handle in a single run the range of 1 to 1,876, it is recommended to run the script 4 times: from 1 to 501, 501 to 1001, 1001 to 1501 and 1501 to 1,876 (or whatever the last page currently is)
-        link = [default_link + str(i) for i in range(1, 501)]
+        link = [default_link + str(i) for i in range(1, 7)]
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as exc:
         scraper = {exc.submit(mine_page, url): url for url in scrape_urls(link)}
         for future in concurrent.futures.as_completed(scraper):
             print(scraper[future])
+
+# finding and deleting duplicates on the database using sqlite3
+# connecting to the database
+connection = sqlite3.connect("albums.db")
+# cursor
+crsr = connection.cursor()
+
+# SLQ command
+sql_command = """DELETE FROM pitchfork
+WHERE id IN
+    (SELECT id
+    FROM 
+        (SELECT id,
+         ROW_NUMBER() OVER( PARTITION BY url
+        ORDER BY  id ) AS row_num
+        FROM pitchfork ) t
+        WHERE t.row_num > 1 );"""
+# execute the statement
+crsr.execute(sql_command)
+
+# commit changes
+connection.commit()
+# close the connection
+connection.close()
