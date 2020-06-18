@@ -57,9 +57,6 @@ def scrape_page(url, recur_depth=0):
     soup = BeautifulSoup(response, 'html.parser')
     div = soup.find('div', {'class': 'single-album-tombstone__art'})
     data['artwork'] = div.find('img')['src']
-    # artwork = resp.html.find('.single-album-tombstone__art img'.get_attribute('src')
-    # if artwork:
-    #    data['artwork'] = artwork[0].text
     # review title
     title = resp.html.find('title')[0].text
     data['title'] = title

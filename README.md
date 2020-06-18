@@ -22,7 +22,9 @@
    \$ `pip install peewee`
 2. It also uses the [requests.html](https://github.com/psf/requests-html) library for the heavylifting (parsing the HTML pages). To install, hit  
    \$ `pip install requests-html`
-3. To parse and format the date into the YYYY-MM-DD format instead of 'January 1 2020', so the data is better handled by the SQL database. For that, the library [htmldate](https://github.com/adbar/htmldate) was used. It can be downloaded by installing  
+3. To fetch the artworks' URL, I had to use BeautifulSoup because the URLs `src` are under a `div/class/img` tag. `Src` is an attribute and not a proper HTML tag, so the requests method does not really work for fetching a `src` URL under an `img` tag.  
+   \$ `pip install beautifulsoup4`
+4. To parse and format the date into the YYYY-MM-DD format instead of 'January 1 2020', so the data is better handled by the SQL database. For that, the library [htmldate](https://github.com/adbar/htmldate) was used. It can be downloaded by installing  
    \$ `pip install htmldate`  
    \$ `pip install --upgrade htmldate`  
    \$ `pip install git+https://github.com/adbar/htmldate.git`
@@ -38,14 +40,14 @@
 - The script parses _all_ [Pitchfork's album reviews](https://pitchfork.com/reviews/albums/). Yes, that's right. There are album reviews dating back from 1999... And they will be parsed too. As of today (May 2020) there are 1,876 published review pages, amounting to 20,141 unique album reviews.
 - As you can probably guess, I ain't got no time to browse each one of them manually.
 - The scraper therefore parses every single album review published on Pitchfork, collects and inserts the following data into the database:  
-  **id**
+  **database id**  
   **pitchfork's album review url**  
   **publication date**  
   **album score**  
   **album year**  
-  **record label**
+  **record label**  
   **genre**  
-  **artwork**
+  **artwork URL**  
   **review title**  
   **artist**  
   **album**
