@@ -1,4 +1,6 @@
 from requests_html import HTMLSession
+import requests
+from bs4 import BeautifulSoup
 import concurrent.futures
 import sys
 import sqlite3
@@ -50,6 +52,14 @@ def scrape_page(url, recur_depth=0):
     genre = resp.html.find('.genre-list__link')
     if genre:
         data['genre'] = genre[0].text
+    # artwork
+    response = requests.get(url).text
+    soup = BeautifulSoup(response, 'html.parser')
+    div = soup.find('div', {'class': 'single-album-tombstone__art'})
+    data['artwork'] = div.find('img')['src'][0]
+    # artwork = resp.html.find('.single-album-tombstone__art img'.get_attribute('src')
+    # if artwork:
+    #    data['artwork'] = artwork[0].text
     # review title
     title = resp.html.find('title')[0].text
     data['title'] = title
@@ -100,6 +110,10 @@ def insert_review(data):
         pass
     try:
         new_review.pubdate = data['pubdate']
+    except KeyError:
+        pass
+    try:
+        new_review.artwork = data['artwork']
     except KeyError:
         pass
     new_review.save()

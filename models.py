@@ -16,6 +16,7 @@ class Pitchfork(BaseModel):
     year = DateField()
     label = TextField()
     genre = TextField()
+    artwork = TextField()
     title = TextField()
     artist = TextField()
     album = TextField()
