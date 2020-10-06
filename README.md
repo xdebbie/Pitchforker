@@ -14,7 +14,7 @@
    This project was conceived using Python 3.7
 3. To load the requirements, type on the terminal  
    \$ `. bin/activate`  
-   \$ `pip install -r requirements.txt`
+   \$ `pip install -r forkkit/requirements.txt`
 
 ### **_Installing the required libraries_**
 
